@@ -1,6 +1,6 @@
 ---
 title: "Regression"
-author: "Your Name"
+author: "Xingchen Zhang"
 date: "2022-12-21"
 output: html_document
 ---
@@ -291,7 +291,8 @@ Here are few rules:
 - You need to explain why you added each variable.
 
 ```{r,eval=FALSE,echo=show_code}
-lmfit_2008<- # ["your model here"] # use ames_raw_2008
+lmfit_2008<-lm(log(SalePrice)~log(`Lot Area`)+log(`Overall Qual`)+log(`Gr Liv Area`)+log(`Garage Area`+1),ames_raw_2008)
+summary(lmfit_2008)
 ```
 
 When you decide on your model use the following to come up with your test loss.
@@ -304,11 +305,15 @@ Try to answer the following additional questions.
 
 - Does your model indicate a good fit?  If not where is the fit off?
 
+Yes.
 
 Your code:
-```{r,echo=TRUE}
-#
-#
+```{r,fig.width=9,fig.height=7,echo=show_code}
+residuals <- resid(lmfit_2008)
+plot(predict(lmfit_2008), residuals)
+par(mfrow = c(2, 2))
+plot(lmfit_2008)
+
 ```
 
 Your answer:
@@ -320,7 +325,7 @@ Please write your answer in full sentences.
 ~~~
 
 - Should you include all the predictors? Why?
-
+Yes. As all the p-values are so small that they are all statistically significant.
 
 Your code:
 ```{r,echo=TRUE}
@@ -341,14 +346,15 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+lmfit_interaction <- lm(log(SalePrice)~log(`Lot Area`)*log(`Overall Qual`)+log(`Gr Liv Area`)*log(`Garage Area`+1), data = ames_raw_2008)
+summary(lmfit_interaction)
+
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+From the result, we can see that "Lot Area" and "Overall Qual" has interaction due to the big p-value.
 
 
 ~~~
@@ -358,8 +364,12 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+lm_poly1 <- lm(log(SalePrice) ~ poly(log(`Lot Area`), 3), data = ames_raw_2008)
+lm_poly2 <- lm(log(SalePrice) ~ poly(log(`Overall Qual`), 3), data = ames_raw_2008)
+lm_poly3 <- lm(log(SalePrice) ~ poly(log(`Gr Liv Area`), 3), data = ames_raw_2008)
+summary(lm_poly1)
+summary(lm_poly2)
+summary(lm_poly3)
 ```
 
 Your answer:
@@ -374,8 +384,24 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+lmfit_2008<- lm(log(SalePrice)~`Lot Area`+`Overall Qual`+`Gr Liv Area`+`Garage Area`,ames_raw_2008)
+predictions <- exp(predict(lmfit_2008, newdata = ames_raw_2008))
+
+residuals <- ames_raw_2008$SalePrice - predictions
+
+percentage_difference <- (residuals / ames_raw_2008$SalePrice) * 100
+
+overpriced_houses <- data.frame(
+  Order = ames_raw_2008$Order,
+  Actual_Price = ames_raw_2008$SalePrice,
+  Predicted_Price = predictions,
+  Residual = residuals,
+  Percentage_Difference = percentage_difference
+)
+overpriced_houses <- overpriced_houses[order(-overpriced_houses$Percentage_Difference), ]
+
+top_5_overpriced_houses <- head(overpriced_houses, 5)
+print(top_5_overpriced_houses)
 ```
 
 Your answer:
@@ -390,8 +416,9 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+good_deals <- overpriced_houses[order(overpriced_houses$Percentage_Difference), ]
+top_5_good_deals <- head(good_deals, 5)
+print(top_5_good_deals)
 ```
 
 Your answer:
@@ -410,8 +437,9 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+auto_lm <- lm(mpg ~ horsepower,data=Auto)
+summary(auto_lm)
+
 ```
 
 Your answer:
@@ -426,20 +454,24 @@ Please write your answer in full sentences.
 Comment on the output.
 For example:
 i. Is there a relationship between the predictor and the response?
+There is a relationship between the predictor and the response, since the p-value associated with the predictor is statistically significant.
 
 ii. How strong is the relationship between the predictor and the response?
+The relationship is moderately strong, indicated by the R-squared value, which measures the proportion of variance in the response explained by the predictor.
 
 iii. Is the relationship between the predictor and the response positive or negative?
+It is negative.
 
 iv. What is the predicted mpg associated with a horsepower of 98? What are the associated 95% confidence and prediction intervals?
+The predicted mpg is 24.4671. When it comes to 95% confidence interval, the predicted mpg is 24.9406, the prediction interval is from 15.2825 to 34.5987.
 
 (b) Plot the response and the predictor. Use the `abline()` function to display the least squares regression line.
 
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+plot(Auto$horsepower, Auto$mpg, xlab = "Horsepower", ylab = "MPG", main = "Simple Linear Regression")
+abline(auto_lm, col = "red")
 ```
 
 Your answer:
@@ -454,9 +486,9 @@ Please write your answer in full sentences.
 (c) Use the `plot()` function to produce diagnostic plots of the least squares regression fit. Comment on any problems you see with the fit.
 
 Your code:
-```{r,echo=TRUE}
-#
-#
+```{r,fig.width=9,fig.height=7,echo=show_code}
+par(mfrow = c(2, 2))
+plot(auto_lm)
 ```
 
 Your answer:
@@ -474,8 +506,7 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+pairs(Auto)
 ```
 
 Your answer:
@@ -493,8 +524,8 @@ cor() which is qualitative.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+cor_matrix <- cor(Auto[, !names(Auto) %in% "name"])
+print(cor_matrix)
 ```
 
 Your answer:
@@ -512,8 +543,9 @@ the predictors. Use the summary() function to print the results.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+multi_lm <- lm(mpg ~ . - name, data = Auto)
+summary(multi_lm)
+
 ```
 
 Your answer:
@@ -527,16 +559,22 @@ Please write your answer in full sentences.
 
 Comment on the output. For instance:
 i. Is there a relationship between the predictors and the response?
+  Yes, by looking at the F-statistic, there is at least 1 predictor is related to the response.
+  
 ii. Which predictors appear to have a statistically significant relationship to the response?
-
+  Displacement, weight, year and origin.
+  
 iii. What does the coefficient for the year variable suggest?
-
+  If there is 1 unit increase of year, there will be 0.7508 increase in the average of mpg.
+  
 (d) Use the plot() function to produce diagnostic plots of the linear regression fit. Comment on any problems you see with the fit. Do the residual plots suggest any unusually large outliers? Does the leverage plot identify any observations with unusually high leverage?
 
 Your code:
-```{r,echo=TRUE}
-#
-#
+```{r,fig.width=9,fig.height=7,echo=show_code}
+multi_lm <- lm(mpg ~ . - name, data = Auto)
+par(mfrow = c(2, 2))
+plot(multi_lm)
+
 ```
 
 Your answer:
@@ -551,14 +589,16 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+interaction_model <- lm(mpg ~ horsepower * weight, data = Auto)
+summary(interaction_model)
+
 ```
+
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+I add the interaction term because I would like to check if there is relationship between the two variables. According to the results, there is small p-value, indicates that all the coefficients are statistically significant. As a result, we should keep all the coefficient.
 
 
 ~~~
@@ -572,8 +612,15 @@ This question should be answered using the Carseats data set.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+model_original <- lm(Sales ~ Price + Urban + US, data = Carseats)
+summary(model_original)
+model_log_price <- lm(Sales ~ log(Price) + Urban + US, data = Carseats)
+model_sqrt_price <- lm(Sales ~ sqrt(Price) + Urban + US, data = Carseats)
+model_price_squared <- lm(Sales ~ I(Price^2) + Urban + US, data = Carseats)
+summary(model_log_price)
+summary(model_sqrt_price)
+summary(model_price_squared)
+
 ```
 
 Your answer:
@@ -595,9 +642,10 @@ Your code:
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+The intercept represents the expected value of Sales is 13/0435 when all other predictors are zero. 
+The coefficient for Price represents the expected change in Sales is 0.0545 for a one-unit increase in Price, holding Urban and US constant. 
+UrbanYes represents the expected difference in Sales is 0.0219 between an Urban location (Urban = Yes) and a non-Urban location (Urban = No), holding Price and US constant.
+USYes represents the expected difference in Sales is 1.2006 between a product sold in the US (US = Yes) and a product sold outside the US (US = No), holding Price and Urban constant.
 ~~~
 
 (c) Write out the model in equation form, being careful to handle the qualitative variables properly.
@@ -611,7 +659,7 @@ Your code:
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+$Sales$=$\beta Price$$*$Price+$\beta UrbanYes$$*$UrbanYes+$\beta USYes*$USYes
 
 
 ~~~
@@ -621,7 +669,7 @@ Please write your answer in full sentences.
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+UrbanYes
 
 
 ~~~
@@ -630,8 +678,9 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+smaller_model <- lm(Sales ~ Price + US, data = Carseats)
+summary(smaller_model)
+
 ```
 
 Your answer:
@@ -649,17 +698,20 @@ Please write your answer in full sentences.
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
+The model fits well.
 
 ~~~
 
 (g) Using the model from (e), obtain 95% confidence intervals for the coefficient(s).
 
 Your code:
-```{r,echo=TRUE}
-#
-#
+```{r,fig.width=9,fig.height=7,echo=show_code}
+conf_intervals <- confint(smaller_model)
+conf_intervals
+# Create diagnostic plots for the smaller model
+par(mfrow = c(2, 2))  # Arrange plots in a 2x2 grid
+plot(smaller_model)
+
 ```
 
 Your answer:
@@ -676,7 +728,7 @@ Please write your answer in full sentences.
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+There are several outliers, but only a few.
 
 
 ~~~
